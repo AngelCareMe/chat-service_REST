@@ -1,0 +1,80 @@
+# docker-compose.yml
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: chat-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: chatdb
+      POSTGRES_USER: chatuser
+      POSTGRES_PASSWORD: chatpass
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatuser -d chatdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chat-network
+
+  # Migration service
+  migrate:
+    image: migrate/migrate
+    container_name: chat-migrate
+    volumes:
+      - ./migrations:/migrations
+    environment:
+      - POSTGRES_USER=chatuser
+      - POSTGRES_PASSWORD=chatpass
+      - POSTGRES_DB=chatdb
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["-path", "/migrations", "-database", "postgresql://chatuser:chatpass@postgres:5432/chatdb?sslmode=disable", "up"]
+    networks:
+      - chat-network
+
+  # Chat service application
+  chat-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chat-service
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - CHAT_DATABASE_HOST=postgres
+      - CHAT_DATABASE_PORT=5432
+      - CHAT_DATABASE_USERNAME=chatuser
+      - CHAT_DATABASE_PASSWORD=chatpass
+      - CHAT_DATABASE_NAME=chatdb
+      - CHAT_SERVER_HOST=0.0.0.0
+      - CHAT_SERVER_PORT=8080
+      - CHAT_JWT_SECRET_KEY=your-super-secret-jwt-key-change-in-production
+      - CHAT_APP_ENVIRONMENT=development
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./configs:/app/configs
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - chat-network
+
+networks:
+  chat-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

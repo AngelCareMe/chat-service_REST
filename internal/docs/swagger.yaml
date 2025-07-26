@@ -1,0 +1,484 @@
+basePath: /
+definitions:
+  entity.Message:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  entity.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      password:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  handler.CreateMessageRequest:
+    properties:
+      content:
+        description: |-
+          Текст сообщения
+          required: true
+          min length: 1
+          max length: 1000
+        maxLength: 1000
+        minLength: 1
+        type: string
+    required:
+    - content
+    type: object
+  handler.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  handler.LoginRequest:
+    properties:
+      email:
+        description: |-
+          Email пользователя
+          required: true
+          format: email
+        type: string
+      password:
+        description: |-
+          Пароль пользователя
+          required: true
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handler.MessageResponse:
+    properties:
+      data:
+        $ref: '#/definitions/entity.Message'
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  handler.MessagesResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/entity.Message'
+        type: array
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  handler.RegisterRequest:
+    properties:
+      email:
+        description: |-
+          Email пользователя
+          required: true
+          format: email
+        type: string
+      password:
+        description: |-
+          Пароль пользователя
+          required: true
+          min length: 6
+        minLength: 6
+        type: string
+      username:
+        description: |-
+          Username пользователя
+          required: true
+          min length: 3
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  handler.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  handler.UserResponse:
+    properties:
+      data:
+        $ref: '#/definitions/entity.User'
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: REST API для чат-приложения
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Chat Service API
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Аутентифицирует пользователя и возвращает токен
+      parameters:
+      - description: Учетные данные
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Вход в систему
+      tags:
+      - users
+  /logout:
+    post:
+      consumes:
+      - application/json
+      description: Завершает сессию пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Выход из системы
+      tags:
+      - users
+  /messages:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает все сообщения в системе (публичный доступ)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MessagesResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Получение всех сообщений
+      tags:
+      - messages
+    post:
+      consumes:
+      - application/json
+      description: Создает новое сообщение от авторизованного пользователя
+      parameters:
+      - description: Текст сообщения
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Создание нового сообщения
+      tags:
+      - messages
+  /messages/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет сообщение авторизованного пользователя
+      parameters:
+      - description: ID сообщения
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Удаление сообщения
+      tags:
+      - messages
+    get:
+      consumes:
+      - application/json
+      description: Возвращает конкретное сообщение по его идентификатору
+      parameters:
+      - description: ID сообщения
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Получение сообщения по ID
+      tags:
+      - messages
+  /messages/my:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает все сообщения авторизованного пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MessagesResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Получение всех сообщений пользователя
+      tags:
+      - messages
+  /profile:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет аккаунт авторизованного пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Удаление аккаунта пользователя
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      description: Возвращает профиль авторизованного пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Получение профиля пользователя
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Обновляет данные профиля авторизованного пользователя
+      parameters:
+      - description: Данные для обновления
+        in: body
+        name: user
+        schema:
+          properties:
+            email:
+              type: string
+            username:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Обновление профиля пользователя
+      tags:
+      - users
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Создает нового пользователя в системе
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Регистрация нового пользователя
+      tags:
+      - users
+securityDefinitions:
+  Bearer:
+    description: '"Type ''Bearer YOUR_TOKEN'' to authenticate"'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

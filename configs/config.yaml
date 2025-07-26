@@ -1,0 +1,38 @@
+# Server configuration
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 60s
+  debug: false
+
+# Database configuration
+database:
+  host: "postgres"  # В Docker будет postgres service name
+  port: 5432
+  username: "chatuser"
+  password: "chatpass"
+  name: "chatdb"
+  ssl_mode: "disable"
+  max_connections: 25
+  min_connections: 5
+  max_conn_lifetime: 5m
+  max_conn_idle_time: 2m
+
+# JWT configuration
+jwt:
+  secret_key: "your-super-secret-jwt-key-change-in-production"
+  expires_in: 24h
+
+# Logger configuration
+logger:
+  level: "info"
+  format: "json"
+  output: "stdout"
+
+# Application configuration
+app:
+  name: "Chat Service"
+  version: "1.0.0"
+  environment: "development"
